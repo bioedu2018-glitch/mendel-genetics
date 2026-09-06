@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>멘델의 유전 원리 - 분리의 법칙 & 대수의 법칙 웹 앱</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            domYellow: '#FACC15',
+            domYellowDark: '#CA8A04',
+            recGreen: '#4ADE80',
+            recGreenDark: '#16A34A',
+            bgSoft: '#F8FAFC',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes dropIn {
+      0% { transform: translateY(-30px) scale(0.5); opacity: 0; }
+      60% { transform: translateY(10px) scale(1.1); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .animate-drop {
+      animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes diceRoll {
+      0% { transform: translateY(-40px) rotate(-720deg) scale(0.2); opacity: 0; }
+      50% { transform: translateY(-10px) rotate(-360deg) scale(1.25); opacity: 0.85; }
+      75% { transform: translateY(4px) rotate(45deg) scale(0.95); opacity: 1; }
+      100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    }
+    .animate-roll {
+      animation: diceRoll 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(-8deg); }
+      40% { transform: rotate(8deg); }
+      60% { transform: rotate(-5deg); }
+      80% { transform: rotate(5deg); }
+    }
+    .animate-shake {
+      animation: shake 0.5s ease-in-out;
+    }
+    @keyframes popBig {
+      0% { transform: scale(0.1) translateY(30px); opacity: 0; }
+      50% { transform: scale(1.8) translateY(-20px); opacity: 1; }
+      75% { transform: scale(0.88) translateY(4px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .animate-pop-big {
+      animation: popBig 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popCharacter {
+      0% { transform: scale(0.6) rotate(-8deg); opacity: 0; }
+      70% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .animate-pop-char {
+      animation: popCharacter 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes floatGentle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: floatGentle 2.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-amber-100">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between items-center gap-2.5">
+      <div class="flex items-center justify-between w-full sm:w-auto gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="bg-amber-100 p-2.5 rounded-2xl text-amber-600 shrink-0 shadow-inner">
+            <i class="fa-solid fa-dna text-xl sm:text-2xl"></i>
+          </div>
+          <div>
+            <h1 class="text-base sm:text-xl font-bold text-slate-800 leading-tight">분리의 법칙 바둑돌 유전 모델링</h1>
+            <p class="text-[11px] sm:text-xs text-slate-500 font-medium">중3 과학 | 멘델의 유전 원리 & 대수의 법칙 탐구</p>
+          </div>
+        </div>
+
+        <!-- Mobile QR Code Button -->
+        <button onclick="toggleQrModal(true)" class="sm:hidden px-2.5 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 transition-all">
+          <i class="fa-solid fa-qrcode text-sm"></i> QR
+        </button>
+      </div>
+
+      <!-- Navigation Tabs & Desktop QR -->
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs sm:text-sm font-medium flex-1 sm:flex-none">
+          <button id="tabIndividualBtn" onclick="switchTab('individual')" class="flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg bg-white shadow-sm text-amber-600 font-bold transition-all">
+            <i class="fa-solid fa-user mr-1.5"></i>개별 탐구
+          </button>
+          <button id="tabClassBtn" onclick="switchTab('class')" class="flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold">
+            <i class="fa-solid fa-users mr-1.5"></i>학급 통계
+          </button>
+        </div>
+
+        <!-- Desktop QR Button -->
+        <button onclick="toggleQrModal(true)" class="hidden sm:flex px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold items-center gap-1.5 transition-all shadow-sm">
+          <i class="fa-solid fa-qrcode text-base"></i> QR 코드
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-grow w-full">
+
+    <!-- GENETIC LEGEND BAR -->
+    <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 sm:gap-4">
+      <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700">
+        <i class="fa-solid fa-circle-info text-amber-500 text-sm sm:text-base"></i>
+        <span>유전자 범례:</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs">
+        <span class="inline-flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 text-amber-800 font-semibold">
+          <span class="w-3 h-3 rounded-full bg-slate-800 border border-slate-600 inline-block shadow-sm"></span>
+          Y (우성, 둥근 완두)
+        </span>
+        <span class="inline-flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 text-emerald-800 font-semibold">
+          <span class="w-3 h-3 rounded-full bg-white border border-slate-400 inline-block shadow-sm"></span>
+          y (열성, 주름진 완두)
+        </span>
+        <span class="text-slate-300 hidden sm:inline">|</span>
+        <span class="text-slate-600 font-medium w-full sm:w-auto mt-1 sm:mt-0">어버이 유전자형: <strong class="text-amber-600 font-bold">Yy × Yy</strong> (잡종 1세대 F1 자기교배)</span>
+      </div>
+    </div>
+
+    <!-- TAB 1: INDIVIDUAL EXPERIMENT -->
+    <section id="individualTab" class="space-y-4 sm:space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+
+        <!-- Left Column: Bag Simulation Controls -->
+        <div class="lg:col-span-7 space-y-4 sm:space-y-6">
+          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+            <h2 class="text-sm sm:text-base font-bold text-slate-800 mb-3 sm:mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-gift text-amber-500"></i>
+              어버이 유전자 복주머니 (Yy)
+            </h2>
+
+            <!-- Pouches / Bags Display -->
+            <div class="grid grid-cols-2 gap-3 sm:gap-5 my-3 sm:my-6">
+              <!-- Bag 1: Red & Gold Fortune Pouch -->
+              <div id="bag1" class="bg-gradient-to-b from-amber-50 via-rose-50/40 to-amber-100/60 border border-amber-200/80 rounded-2xl p-3 sm:p-4 text-center relative shadow-sm transition-all flex flex-col justify-between items-center min-h-[220px]">
+                <span class="text-[11px] sm:text-xs font-extrabold text-amber-900 bg-amber-200/90 border border-amber-300 px-3 py-1 rounded-full shadow-xs">부모 1 복주머니 (Yy)</span>
+                
+                <!-- Fortune Pouch Graphic -->
+                <div class="relative w-full max-w-[140px] my-2 flex items-center justify-center">
+                  <svg viewBox="0 0 160 160" class="w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md">
+                    <!-- Ribbon Tied Node & String -->
+                    <path d="M 50 42 C 65 28, 95 28, 110 42" fill="none" stroke="#B45309" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 80 40 L 80 58" fill="none" stroke="#DC2626" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="80" cy="38" r="6" fill="#F59E0B" stroke="#B45309" stroke-width="2"/>
+                    <path d="M 80 40 Q 68 55 62 68" fill="none" stroke="#DC2626" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M 80 40 Q 92 55 98 68" fill="none" stroke="#DC2626" stroke-width="4.5" stroke-linecap="round"/>
+                    
+                    <!-- Pouch Neck Frills -->
+                    <path d="M 48 42 Q 80 32 112 42 Q 122 22 105 16 Q 80 22 55 16 Q 38 22 48 42 Z" fill="#EF4444" stroke="#B91C1C" stroke-width="2.5"/>
+                    
+                    <!-- Pouch Body -->
+                    <path d="M 48 42 C 12 68 18 145 80 148 C 142 145 148 68 112 42 C 95 40 65 40 48 42 Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                    <path d="M 55 58 C 34 78 38 132 80 135 C 122 132 126 78 105 58 Z" fill="#FEF3C7" opacity="0.85"/>
+                    
+                    <!-- Chinese character '福' (Blessing) Background Motif -->
+                    <text x="80" y="104" text-anchor="middle" fill="#D97706" font-size="34" font-weight="900" opacity="0.22" font-family="serif">福</text>
+                  </svg>
+
+                  <!-- Genes Overlayed Inside Pouch -->
+                  <div class="absolute inset-0 pt-9 flex justify-center items-center gap-1.5">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-md">Y</div>
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-slate-800 font-black text-xs sm:text-sm shadow-md">y</div>
+                  </div>
+                </div>
+
+                <div id="drawnStone1" class="h-12 sm:h-14 flex items-center justify-center w-full">
+                  <span class="text-[11px] sm:text-xs text-slate-400 italic font-semibold">추출 대기 중...</span>
+                </div>
+              </div>
+
+              <!-- Bag 2: Blue & Gold Fortune Pouch -->
+              <div id="bag2" class="bg-gradient-to-b from-sky-50 via-indigo-50/40 to-amber-100/60 border border-sky-200/80 rounded-2xl p-3 sm:p-4 text-center relative shadow-sm transition-all flex flex-col justify-between items-center min-h-[220px]">
+                <span class="text-[11px] sm:text-xs font-extrabold text-indigo-900 bg-sky-200/90 border border-sky-300 px-3 py-1 rounded-full shadow-xs">부모 2 복주머니 (Yy)</span>
+                
+                <!-- Fortune Pouch Graphic -->
+                <div class="relative w-full max-w-[140px] my-2 flex items-center justify-center">
+                  <svg viewBox="0 0 160 160" class="w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md">
+                    <!-- Ribbon Tied Node & String -->
+                    <path d="M 50 42 C 65 28, 95 28, 110 42" fill="none" stroke="#1E40AF" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 80 40 L 80 58" fill="none" stroke="#F59E0B" stroke-width="5" stroke-linecap="round"/>
+                    <circle cx="80" cy="38" r="6" fill="#3B82F6" stroke="#1E3A8A" stroke-width="2"/>
+                    <path d="M 80 40 Q 68 55 62 68" fill="none" stroke="#F59E0B" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M 80 40 Q 92 55 98 68" fill="none" stroke="#F59E0B" stroke-width="4.5" stroke-linecap="round"/>
+                    
+                    <!-- Pouch Neck Frills -->
+                    <path d="M 48 42 Q 80 32 112 42 Q 122 22 105 16 Q 80 22 55 16 Q 38 22 48 42 Z" fill="#2563EB" stroke="#1D4ED8" stroke-width="2.5"/>
+                    
+                    <!-- Pouch Body -->
+                    <path d="M 48 42 C 12 68 18 145 80 148 C 142 145 148 68 112 42 C 95 40 65 40 48 42 Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                    <path d="M 55 58 C 34 78 38 132 80 135 C 122 132 126 78 105 58 Z" fill="#E0F2FE" opacity="0.85"/>
+                    
+                    <!-- Chinese character '福' (Blessing) Background Motif -->
+                    <text x="80" y="104" text-anchor="middle" fill="#0284C7" font-size="34" font-weight="900" opacity="0.2" font-family="serif">福</text>
+                  </svg>
+
+                  <!-- Genes Overlayed Inside Pouch -->
+                  <div class="absolute inset-0 pt-9 flex justify-center items-center gap-1.5">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 border-2 border-sky-400 flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-md">Y</div>
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border-2 border-sky-400 flex items-center justify-center text-slate-800 font-black text-xs sm:text-sm shadow-md">y</div>
+                  </div>
+                </div>
+
+                <div id="drawnStone2" class="h-12 sm:h-14 flex items-center justify-center w-full">
+                  <span class="text-[11px] sm:text-xs text-slate-400 italic font-semibold">추출 대기 중...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Combination Result Banner & F2 Character Display -->
+            <div id="resultBanner" class="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 text-white rounded-2xl p-4 sm:p-5 border border-amber-500/30 shadow-lg min-h-[170px] flex flex-col sm:flex-row items-center justify-around gap-4 relative overflow-hidden transition-all">
+              <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+              
+              <!-- Character Visual Container -->
+              <div id="peaCharacterBox" class="flex flex-col items-center justify-center shrink-0">
+                <div id="peaCharacterSvg" class="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center animate-float">
+                  <!-- Default Placeholder SVG -->
+                  <svg width="85" height="85" viewBox="0 0 100 100" class="opacity-40">
+                    <circle cx="50" cy="50" r="40" fill="#64748B" stroke="#94A3B8" stroke-width="4" stroke-dasharray="6,6"/>
+                    <text x="50" y="58" text-anchor="middle" fill="#CBD5E1" font-size="28" font-weight="bold">?</text>
+                  </svg>
+                </div>
+                <span id="peaCharBadge" class="mt-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 shadow-sm">
+                  추출 대기 중
+                </span>
+              </div>
+
+              <!-- Result Info Container -->
+              <div class="text-center sm:text-left flex-1 space-y-1.5">
+                <div class="text-[11px] sm:text-xs font-bold text-amber-400 tracking-wider flex items-center justify-center sm:justify-start gap-1">
+                  <i class="fa-solid fa-sparkles"></i> 잡종 2세대(F2) 유전 조합 결과
+                </div>
+                <div id="resultText" class="text-sm sm:text-lg font-extrabold text-slate-100">
+                  버튼을 눌러 바둑돌을 무작위로 추출해 보세요!
+                </div>
+                <div id="resultQuote" class="text-xs text-slate-300 italic min-h-[20px] bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                  "각 주머니에서 유전자가 무작위로 분리되어 만납니다."
+                </div>
+              </div>
+            </div>
+
+            <!-- Simulation Buttons -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-6">
+              <button onclick="runSimulation(1)" class="py-2.5 sm:py-3 px-2 sm:px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold rounded-xl shadow transition-all active:scale-95 text-xs sm:text-base flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                <i class="fa-solid fa-hand-pointer"></i> 1회 추출
+              </button>
+              <button onclick="runSimulation(10)" class="py-2.5 sm:py-3 px-2 sm:px-4 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold rounded-xl shadow transition-all active:scale-95 text-xs sm:text-base flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                <i class="fa-solid fa-angles-right"></i> 10회 연속
+              </button>
+              <button onclick="runSimulation(100)" class="py-2.5 sm:py-3 px-2 sm:px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl shadow transition-all active:scale-95 text-xs sm:text-base flex flex-col sm:flex-row items-center justify-center gap-1.5">
+                <i class="fa-solid fa-bolt"></i> 100회 고속
+              </button>
+            </div>
+
+            <div class="mt-3 sm:mt-4 flex justify-end">
+              <button onclick="resetIndividualData()" class="text-xs text-rose-500 hover:text-rose-700 underline font-semibold flex items-center gap-1 py-1 transition-colors">
+                <i class="fa-solid fa-rotate-right"></i> 개별 데이터 초기화
+              </button>
+            </div>
+          </div>
+
+          <!-- Google Sheet One-Touch Submission Card -->
+          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-2 sm:mb-3">
+              <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane text-emerald-500"></i>
+                학급 전체 데이터 전송
+              </h2>
+              <button onclick="toggleSettingsModal(true)" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-semibold bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-all">
+                <i class="fa-solid fa-gear"></i> 연동 설정
+              </button>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">소속 학급(1~4반)과 이름/모둠을 입력한 후 [전송하기] 버튼을 누르면 학급 집계 데이터에 포함됩니다.</p>
+
+            <div class="space-y-2.5">
+              <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-4 sm:col-span-3">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">학급 (반)</label>
+                  <select id="classNameInput" onchange="saveStudentInfo()" class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white font-semibold text-slate-700">
+                    <option value="1반">1반</option>
+                    <option value="2반">2반</option>
+                    <option value="3반">3반</option>
+                    <option value="4반">4반</option>
+                  </select>
+                </div>
+                <div class="col-span-8 sm:col-span-9">
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">학생 / 모둠 이름</label>
+                  <input type="text" id="studentNameInput" placeholder="예: 1모둠 또는 홍길동" oninput="saveStudentInfo()" class="w-full px-3 py-2 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-medium">
+                </div>
+              </div>
+
+              <button id="submitBtn" onclick="submitToClassData()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all active:scale-98 text-sm sm:text-base flex items-center justify-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 학급 결과에 전송하기
+              </button>
+              
+              <div id="submitStatus" class="text-center text-xs font-semibold min-h-[18px]"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Individual Statistics -->
+        <div class="lg:col-span-5 space-y-4 sm:space-y-6">
+          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm h-full flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center mb-3 sm:mb-4">
+                <h2 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-chart-pie text-amber-500"></i>
+                  개별 통계 결과
+                </h2>
+                <span class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200">
+                  총: <span id="indTotalCount" class="text-amber-600 font-extrabold">0</span>회
+                </span>
+              </div>
+
+              <!-- Phenotype Summary Cards -->
+              <div class="grid grid-cols-2 gap-2.5 sm:gap-3 mb-4">
+                <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-center shadow-xs">
+                  <span class="text-[11px] sm:text-xs text-amber-800 font-bold block mb-0.5">🟡 둥근 완두 (우성)</span>
+                  <div class="text-lg sm:text-2xl font-black text-amber-900" id="indYellowCount">0</div>
+                  <div class="text-[10px] sm:text-xs text-amber-700 font-bold" id="indYellowRatio">(0%)</div>
+                </div>
+                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-center shadow-xs">
+                  <span class="text-[11px] sm:text-xs text-emerald-800 font-bold block mb-0.5">🌀 주름진 완두 (열성)</span>
+                  <div class="text-lg sm:text-2xl font-black text-emerald-900" id="indGreenCount">0</div>
+                  <div class="text-[10px] sm:text-xs text-emerald-700 font-bold" id="indGreenRatio">(0%)</div>
+                </div>
+              </div>
+
+              <!-- Ratio Display Mode Selector -->
+              <div class="mb-3 bg-slate-100 p-1 rounded-xl flex text-xs font-bold">
+                <button id="indViewPhenoBtn" onclick="setIndViewMode('phenotype')" class="flex-1 py-1.5 rounded-lg bg-white shadow-sm text-amber-600 font-bold transition-all">
+                  표현형 비율 (3 : 1)
+                </button>
+                <button id="indViewGenoBtn" onclick="setIndViewMode('genotype')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold">
+                  유전자형 비율 (1 : 2 : 1)
+                </button>
+              </div>
+
+              <!-- Genotype Table -->
+              <div class="overflow-hidden border border-slate-200 rounded-xl mb-4 sm:mb-6 shadow-xs">
+                <table class="w-full text-xs text-left text-slate-600">
+                  <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] sm:text-[11px]">
+                    <tr>
+                      <th class="px-2.5 sm:px-3 py-2">유전자형</th>
+                      <th class="px-2.5 sm:px-3 py-2">표현형</th>
+                      <th class="px-2.5 sm:px-3 py-2 text-right">개수</th>
+                      <th class="px-2.5 sm:px-3 py-2 text-right">비율</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 font-medium bg-white">
+                    <tr>
+                      <td class="px-2.5 sm:px-3 py-2 font-bold text-slate-800">YY</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-amber-600 font-semibold">둥근 완두 (순종)</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right font-bold" id="indYYCount">0</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right text-slate-500 font-semibold" id="indYYRatio">0%</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2.5 sm:px-3 py-2 font-bold text-slate-800">Yy</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-amber-600 font-semibold">둥근 완두 (잡종)</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right font-bold" id="indYyCount">0</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right text-slate-500 font-semibold" id="indYyRatio">0%</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2.5 sm:px-3 py-2 font-bold text-slate-800">yy</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-emerald-600 font-semibold">주름진 완두 (순종)</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right font-bold" id="indyyCount">0</td>
+                      <td class="px-2.5 sm:px-3 py-2 text-right text-slate-500 font-semibold" id="indyyRatio">0%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Individual Chart -->
+              <div class="relative h-44 sm:h-52 w-full bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+                <canvas id="individualChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Ratio Summary Badge -->
+            <div class="mt-3 sm:mt-4 pt-2.5 border-t border-slate-100 text-center">
+              <p class="text-xs text-slate-600 font-semibold">
+                <span id="indRatioLabel" class="text-slate-500">실험 표현형 비율 (둥근 : 주름진) = </span>
+                <strong id="indPhenoRatio" class="text-amber-600 font-extrabold text-sm sm:text-base">0 : 0</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: CLASS STATISTICS -->
+    <section id="classTab" class="space-y-6 hidden">
+      <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6 pb-3 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-users-viewfinder text-indigo-500"></i>
+                학급 전체 데이터 집계 및 대수의 법칙
+              </h2>
+              <!-- Data Source Indicator Badge -->
+              <span id="dataSourceBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 shadow-xs">
+                로컬 저장 데이터
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5 font-medium">학급 전체 표본이 누적될수록 이론적 유전 비율(3:1 및 1:2:1)에 수렴함을 확인해 보세요.</p>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select id="classSelect" onchange="fetchClassData()" class="px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+              <option value="1반">1반</option>
+              <option value="2반">2반</option>
+              <option value="3반">3반</option>
+              <option value="4반">4반</option>
+            </select>
+            <button onclick="fetchClassData()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-xl text-xs sm:text-sm shadow flex items-center justify-center gap-1.5 transition-all shrink-0">
+              <i class="fa-solid fa-arrows-rotate"></i> 새로고침
+            </button>
+          </div>
+        </div>
+
+        <!-- Class Overall Summary Cards -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+          <div class="bg-slate-50 p-2.5 sm:p-4 rounded-xl border border-slate-200 text-center">
+            <span class="text-[10px] sm:text-xs text-slate-500 font-semibold block mb-0.5">전체 총 시행 횟수</span>
+            <div class="text-lg sm:text-3xl font-black text-slate-800" id="classTotalN">0</div>
+            <span class="text-[10px] sm:text-xs text-slate-400 font-medium">표본 크기 N</span>
+          </div>
+          <div class="bg-amber-50/80 p-2.5 sm:p-4 rounded-xl border border-amber-200 text-center">
+            <span class="text-[10px] sm:text-xs text-amber-800 font-bold block mb-0.5">🟡 둥근 완두 (우성)</span>
+            <div class="text-lg sm:text-3xl font-black text-amber-700" id="classYellowTotal">0</div>
+            <span class="text-[10px] sm:text-xs text-amber-800 font-extrabold" id="classYellowPercent">0%</span>
+          </div>
+          <div class="bg-emerald-50/80 p-2.5 sm:p-4 rounded-xl border border-emerald-200 text-center">
+            <span class="text-[10px] sm:text-xs text-emerald-800 font-bold block mb-0.5">🌀 주름진 완두 (열성)</span>
+            <div class="text-lg sm:text-3xl font-black text-emerald-700" id="classGreenTotal">0</div>
+            <span class="text-[10px] sm:text-xs text-emerald-800 font-extrabold" id="classGreenPercent">0%</span>
+          </div>
+        </div>
+
+        <!-- Class View Mode Toggle Selector -->
+        <div class="flex justify-center mb-4">
+          <div class="bg-slate-100 p-1 rounded-xl flex text-xs font-bold w-full max-w-md">
+            <button id="classViewPhenoBtn" onclick="setClassViewMode('phenotype')" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition-all">
+              <i class="fa-solid fa-shapes mr-1"></i>표현형 비율 (3 : 1)
+            </button>
+            <button id="classViewGenoBtn" onclick="setClassViewMode('genotype')" class="flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+              <i class="fa-solid fa-dna mr-1"></i>유전자형 비율 (1 : 2 : 1)
+            </button>
+          </div>
+        </div>
+
+        <!-- Law of Large Numbers Visual Bar -->
+        <div class="mb-6 bg-slate-50 p-3.5 sm:p-5 rounded-2xl border border-slate-200">
+          <div class="flex justify-between items-center mb-2">
+            <span id="classBarTitle" class="text-xs sm:text-sm font-bold text-slate-700">표현형 비율 수렴 상태 (이론값 3 : 1 = 75% : 25%)</span>
+            <span class="text-xs sm:text-sm font-black text-indigo-600" id="classRatioText">0 : 0</span>
+          </div>
+          
+          <!-- Dynamic Stacked Bar Container -->
+          <div id="llnBarContainer" class="w-full h-7 sm:h-8 bg-slate-200 rounded-full overflow-hidden flex border border-slate-300 shadow-inner relative">
+            <!-- Dynamically populated in updateClassUI() -->
+          </div>
+          <div id="llnMarkersContainer" class="flex justify-between items-center text-[10px] sm:text-xs text-slate-500 mt-1.5 font-semibold">
+            <span>0%</span>
+            <span id="llnTargetText" class="text-rose-600 font-bold">▲ 이론적 우성 비율 (75%)</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- Class Chart & Submissions Table Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Class Chart -->
+          <div class="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+            <h3 class="text-xs sm:text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-column text-indigo-500"></i>
+              실험값 vs 이론값 비교
+            </h3>
+            <div class="relative h-56 sm:h-64 w-full">
+              <canvas id="classChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Class Submissions List Table -->
+          <div class="lg:col-span-7 space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-indigo-500"></i>
+                모둠/학생 제출 기록 목록
+              </h3>
+              <button onclick="clearClassData()" class="text-xs text-rose-500 hover:text-rose-700 font-bold underline flex items-center gap-1">
+                <i class="fa-solid fa-trash-can"></i> 이 반 데이터 전체 초기화
+              </button>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white max-h-64 overflow-y-auto shadow-xs">
+              <table class="w-full text-xs text-left text-slate-600">
+                <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[10px] sm:text-[11px] sticky top-0 z-10">
+                  <tr>
+                    <th class="px-3 py-2.5">이름/모둠</th>
+                    <th class="px-3 py-2.5 text-center">시행회수</th>
+                    <th class="px-3 py-2.5 text-center">YY</th>
+                    <th class="px-3 py-2.5 text-center">Yy</th>
+                    <th class="px-3 py-2.5 text-center">yy</th>
+                    <th class="px-3 py-2.5 text-right">우성:열성</th>
+                  </tr>
+                </thead>
+                <tbody id="classTableBody" class="divide-y divide-slate-200 font-medium">
+                  <tr>
+                    <td colspan="6" class="px-3 py-6 text-center text-slate-400 italic">
+                      아직 제출된 데이터가 없습니다.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-3 sm:py-4 mt-6">
+    <div class="max-w-6xl mx-auto px-4 text-center text-xs text-slate-500 font-medium">
+      <p>중학교 3학년 과학 - 멘델의 유전 원리 (분리의 법칙 & 대수의 법칙)</p>
+      <p class="text-[11px] text-slate-400 mt-0.5">Interactive Genetics Simulator | Yy × Yy Monohybrid Cross Model</p>
+    </div>
+  </footer>
+
+  <!-- QR CODE MODAL -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative animate-drop">
+      <button onclick="toggleQrModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-3 text-xl">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <h3 class="text-base font-bold text-slate-800 mb-1">수업 참가용 QR 코드</h3>
+      <p class="text-xs text-slate-500 mb-4">학생들이 스마트폰이나 태블릿으로 스캔하여 바로 접속할 수 있습니다.</p>
+
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-inner">
+        <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost" alt="App QR Code" class="w-44 h-44 rounded-lg mx-auto">
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="copyCurrentUrl()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-copy"></i> 링크 복사
+        </button>
+        <button onclick="toggleQrModal(false)" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all">
+          닫기
+        </button>
+      </div>
+      <div id="copyStatus" class="text-[11px] text-emerald-600 font-bold mt-2 min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- GOOGLE SHEETS SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-drop">
+      <button onclick="toggleSettingsModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="flex items-center gap-2.5 mb-3">
+        <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 text-lg font-bold">
+          <i class="fa-solid fa-file-csv"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-800">구글 시트 실시간 연동 설정</h3>
+          <p class="text-xs text-slate-500">교사용 Apps Script 웹 앱 URL 설정</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-3 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+        Google Apps Script를 통해 웹 앱 URL을 등록하면, 학생들의 전송 데이터가 교사의 구글 스프레드시트 각 반 탭(1반, 2반, 3반, 4반)에 실시간으로 입력됩니다.
+      </p>
+
+      <div class="space-y-3 mb-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Apps Script 웹 앱 URL</label>
+          <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:outline-none font-mono">
+        </div>
+        <div id="gasModalStatus" class="text-xs font-bold text-center min-h-[16px]"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="saveGasSettings()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all">
+          설정 저장하기
+        </button>
+        <button onclick="clearGasSettings()" class="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all">
+          해제
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL (REPLACES BROWSER CONFIRM) -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl relative animate-drop">
+      <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600 text-lg font-bold mx-auto mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 class="text-sm font-bold text-slate-800 mb-1" id="confirmTitle">학급 데이터 초기화</h3>
+      <p class="text-xs text-slate-500 mb-4" id="confirmMessage">선택한 학급의 전체 집계 데이터를 삭제하시겠습니까?</p>
+      <div class="flex gap-2">
+        <button id="confirmYesBtn" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all">
+          초기화
+        </button>
+        <button onclick="toggleConfirmModal(false)" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all">
+          취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    const indState = {
+      YY: 0,
+      Yy: 0,
+      yy: 0,
+      viewMode: 'phenotype' // 'phenotype' or 'genotype'
+    };
+
+    const classState = {
+      viewMode: 'phenotype',
+      selectedClass: '1반',
+      records: []
+    };
+
+    let individualChartInstance = null;
+    let classChartInstance = null;
+    let audioCtx = null;
+    let onConfirmCallback = null;
+
+    function loadStudentInfo() {
+      const savedClass = localStorage.getItem('mendel_student_class');
+      const savedName = localStorage.getItem('mendel_student_name');
+      if (savedClass) {
+        document.getElementById('classNameInput').value = savedClass;
+      }
+      if (savedName) {
+        document.getElementById('studentNameInput').value = savedName;
+      }
+    }
+
+    function saveStudentInfo() {
+      const cls = document.getElementById('classNameInput').value;
+      const name = document.getElementById('studentNameInput').value;
+      localStorage.setItem('mendel_student_class', cls);
+      localStorage.setItem('mendel_student_name', name);
+    }
+
+    function toggleQrModal(show) {
+      const modal = document.getElementById('qrModal');
+      if (show) {
+        const currentUrl = window.location.href;
+        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentUrl)}`;
+        document.getElementById('copyStatus').innerText = '';
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function copyCurrentUrl() {
+      const url = window.location.href;
+      const tempInput = document.createElement('input');
+      tempInput.value = url;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        document.getElementById('copyStatus').innerText = '✅ 링크가 클립보드에 복사되었습니다!';
+      } catch (err) {
+        document.getElementById('copyStatus').innerText = '❌ 복사 실패';
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function toggleSettingsModal(show) {
+      const modal = document.getElementById('settingsModal');
+      if (show) {
+        const gasUrl = localStorage.getItem('mendel_gas_url') || '';
+        document.getElementById('gasUrlInput').value = gasUrl;
+        document.getElementById('gasModalStatus').innerText = '';
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playPopSound(freq = 440) {
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.8, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.09);
+      } catch (e) {}
+    }
+
+    function playFanfareSound() {
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.26);
+        });
+      } catch(e) {}
+    }
+
+    function getRandomGene() {
+      return Math.random() < 0.5 ? 'Y' : 'y';
+    }
+
+    function runSimulation(times) {
+      initAudio();
+      
+      let lastG1 = '', lastG2 = '', lastGeno = '';
+
+      for (let i = 0; i < times; i++) {
+        const g1 = getRandomGene(); // From Bag 1 (Yy)
+        const g2 = getRandomGene(); // From Bag 2 (Yy)
+        
+        let geno = '';
+        if (g1 === 'Y' && g2 === 'Y') geno = 'YY';
+        else if (g1 === 'y' && g2 === 'y') geno = 'yy';
+        else geno = 'Yy';
+
+        indState[geno]++;
+
+        lastG1 = g1;
+        lastG2 = g2;
+        lastGeno = geno;
+      }
+
+      animateBags(lastG1, lastG2, lastGeno, times);
+      updateIndividualUI();
+
+      if (times === 100) playFanfareSound();
+      else playPopSound(lastGeno === 'yy' ? 350 : 520);
+    }
+
+    function animateBags(g1, g2, geno, times) {
+      const bag1 = document.getElementById('bag1');
+      const bag2 = document.getElementById('bag2');
+      
+      // Reset shake animation class to re-trigger on click
+      bag1.classList.remove('animate-shake');
+      bag2.classList.remove('animate-shake');
+      void bag1.offsetWidth; // Trigger reflow for CSS animation reset
+      bag1.classList.add('animate-shake');
+      bag2.classList.add('animate-shake');
+
+      const s1 = document.getElementById('drawnStone1');
+      const s2 = document.getElementById('drawnStone2');
+
+      const stone1Html = g1 === 'Y' 
+        ? `<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg animate-pop-big">Y</div>`
+        : `<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-slate-900 font-black text-base sm:text-lg shadow-lg animate-pop-big">y</div>`;
+
+      const stone2Html = g2 === 'Y' 
+        ? `<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-900 border-2 border-sky-400 flex items-center justify-center text-white font-black text-base sm:text-lg shadow-lg animate-pop-big">Y</div>`
+        : `<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-sky-400 flex items-center justify-center text-slate-900 font-black text-base sm:text-lg shadow-lg animate-pop-big">y</div>`;
+
+      s1.innerHTML = stone1Html;
+      s2.innerHTML = stone2Html;
+
+      const charBox = document.getElementById('peaCharacterSvg');
+      const badge = document.getElementById('peaCharBadge');
+      const resText = document.getElementById('resultText');
+      const resQuote = document.getElementById('resultQuote');
+
+      if (geno === 'YY') {
+        charBox.innerHTML = `
+          <svg width="90" height="90" viewBox="0 0 100 100" class="animate-pop-char">
+            <circle cx="50" cy="50" r="42" fill="#FACC15" stroke="#CA8A04" stroke-width="4"/>
+            <circle cx="36" cy="42" r="5" fill="#1E293B"/>
+            <circle cx="64" cy="42" r="5" fill="#1E293B"/>
+            <path d="M 38 60 Q 50 72 62 60" fill="transparent" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="28" cy="52" r="4" fill="#F87171" opacity="0.6"/>
+            <circle cx="72" cy="52" r="4" fill="#F87171" opacity="0.6"/>
+          </svg>`;
+        badge.innerHTML = `<span class="bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full font-black">YY (둥근 완두 - 순종)</span>`;
+        resText.innerText = times === 1 ? '둥근 완두 (YY) 조합 완성!' : `마지막 추출: 둥근 완두 (YY)`;
+        resQuote.innerText = `"우성 유전자만 모여 둥근 완두가 나타납니다!"`;
+      } else if (geno === 'Yy') {
+        charBox.innerHTML = `
+          <svg width="90" height="90" viewBox="0 0 100 100" class="animate-pop-char">
+            <circle cx="50" cy="50" r="42" fill="#FACC15" stroke="#CA8A04" stroke-width="4"/>
+            <circle cx="36" cy="42" r="5" fill="#1E293B"/>
+            <circle cx="64" cy="42" r="5" fill="#1E293B"/>
+            <path d="M 40 60 Q 50 68 60 60" fill="transparent" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 68 32 C 72 28 80 28 82 34" fill="transparent" stroke="#CA8A04" stroke-width="3" stroke-linecap="round"/>
+          </svg>`;
+        badge.innerHTML = `<span class="bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full font-black">Yy (둥근 완두 - 잡종)</span>`;
+        resText.innerText = times === 1 ? '둥근 완두 (Yy) 조합 완성!' : `마지막 추출: 둥근 완두 (Yy)`;
+        resQuote.innerText = `"열성 유전자(y)가 있지만 우성 유전자(Y)가 표현형을 결정합니다."`;
+      } else if (geno === 'yy') {
+        charBox.innerHTML = `
+          <svg width="90" height="90" viewBox="0 0 100 100" class="animate-pop-char">
+            <path d="M 50 8 C 72 8 92 28 92 50 C 92 72 72 92 50 92 C 28 92 8 72 8 50 C 8 28 28 8 50 8 Z" fill="#4ADE80" stroke="#16A34A" stroke-width="4"/>
+            <path d="M 22 35 Q 28 50 20 65" fill="transparent" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 78 35 Q 72 50 80 65" fill="transparent" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="38" cy="44" r="4" fill="#064E3B"/>
+            <circle cx="62" cy="44" r="4" fill="#064E3B"/>
+            <path d="M 42 62 Q 50 56 58 62" fill="transparent" stroke="#064E3B" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>`;
+        badge.innerHTML = `<span class="bg-emerald-400 text-emerald-950 px-2.5 py-0.5 rounded-full font-black">yy (주름진 완두 - 순종)</span>`;
+        resText.innerText = times === 1 ? '주름진 완두 (yy) 조합 완성!' : `마지막 추출: 주름진 완두 (yy)`;
+        resQuote.innerText = `"열성 유전자만 둘 모여 주름진 완두가 표현되었습니다!"`;
+      }
+    }
+
+    function updateIndividualUI() {
+      const total = indState.YY + indState.Yy + indState.yy;
+      const yellow = indState.YY + indState.Yy;
+      const green = indState.yy;
+
+      document.getElementById('indTotalCount').innerText = total;
+      document.getElementById('indYellowCount').innerText = yellow;
+      document.getElementById('indGreenCount').innerText = green;
+
+      const yPct = total > 0 ? ((yellow / total) * 100).toFixed(1) : '0';
+      const gPct = total > 0 ? ((green / total) * 100).toFixed(1) : '0';
+
+      document.getElementById('indYellowRatio').innerText = `(${yPct}%)`;
+      document.getElementById('indGreenRatio').innerText = `(${gPct}%)`;
+
+      document.getElementById('indYYCount').innerText = indState.YY;
+      document.getElementById('indYyCount').innerText = indState.Yy;
+      document.getElementById('indyyCount').innerText = indState.yy;
+
+      document.getElementById('indYYRatio').innerText = total > 0 ? `${((indState.YY / total) * 100).toFixed(1)}%` : '0%';
+      document.getElementById('indYyRatio').innerText = total > 0 ? `${((indState.Yy / total) * 100).toFixed(1)}%` : '0%';
+      document.getElementById('indyyRatio').innerText = total > 0 ? `${((indState.yy / total) * 100).toFixed(1)}%` : '0%';
+
+      if (green > 0) {
+        document.getElementById('indPhenoRatio').innerText = `${(yellow / green).toFixed(2)} : 1`;
+      } else {
+        document.getElementById('indPhenoRatio').innerText = `${yellow} : ${green}`;
+      }
+
+      updateIndividualChart();
+    }
+
+    function setIndViewMode(mode) {
+      indState.viewMode = mode;
+      const phenoBtn = document.getElementById('indViewPhenoBtn');
+      const genoBtn = document.getElementById('indViewGenoBtn');
+      if (mode === 'phenotype') {
+        phenoBtn.className = 'flex-1 py-1.5 rounded-lg bg-white shadow-sm text-amber-600 font-bold transition-all';
+        genoBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+        document.getElementById('indRatioLabel').innerText = '실험 표현형 비율 (둥근 : 주름진) = ';
+      } else {
+        genoBtn.className = 'flex-1 py-1.5 rounded-lg bg-white shadow-sm text-amber-600 font-bold transition-all';
+        phenoBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+        document.getElementById('indRatioLabel').innerText = '실험 유전자형 비율 (YY : Yy : yy) = ';
+        const total = indState.YY + indState.Yy + indState.yy;
+        if (total > 0) {
+          document.getElementById('indPhenoRatio').innerText = `${indState.YY} : ${indState.Yy} : ${indState.yy}`;
+        }
+      }
+      updateIndividualUI();
+    }
+
+    function resetIndividualData() {
+      indState.YY = 0;
+      indState.Yy = 0;
+      indState.yy = 0;
+      document.getElementById('drawnStone1').innerHTML = `<span class="text-[11px] sm:text-xs text-slate-400 italic">추출 대기 중...</span>`;
+      document.getElementById('drawnStone2').innerHTML = `<span class="text-[11px] sm:text-xs text-slate-400 italic">추출 대기 중...</span>`;
+      document.getElementById('peaCharacterSvg').innerHTML = `
+        <svg width="85" height="85" viewBox="0 0 100 100" class="opacity-40">
+          <circle cx="50" cy="50" r="40" fill="#64748B" stroke="#94A3B8" stroke-width="4" stroke-dasharray="6,6"/>
+          <text x="50" y="58" text-anchor="middle" fill="#CBD5E1" font-size="28" font-weight="bold">?</text>
+        </svg>`;
+      document.getElementById('peaCharBadge').innerText = '추출 대기 중';
+      document.getElementById('resultText').innerText = '버튼을 눌러 바둑돌을 무작위로 추출해 보세요!';
+      document.getElementById('resultQuote').innerText = `"각 주머니에서 유전자가 무작위로 분리되어 만납니다."`;
+      updateIndividualUI();
+    }
+
+    function submitToClassData() {
+      const total = indState.YY + indState.Yy + indState.yy;
+      const statusEl = document.getElementById('submitStatus');
+      if (total === 0) {
+        statusEl.innerText = '⚠️ 시뮬레이션을 최소 1회 이상 실행한 후 제출해 주세요.';
+        statusEl.className = 'text-center text-xs font-bold text-amber-600 min-h-[18px]';
+        return;
+      }
+
+      const cls = document.getElementById('classNameInput').value;
+      const nameInput = document.getElementById('studentNameInput');
+      const name = (nameInput ? nameInput.value.trim() : '') || '익명 학생';
+
+      // 입력된 학생 정보 즉시 저장
+      saveStudentInfo();
+
+      const record = {
+        studentName: name,
+        name: name,
+        total: total,
+        YY: indState.YY,
+        Yy: indState.Yy,
+        yy: indState.yy,
+        timestamp: new Date().toISOString()
+      };
+
+      const storageKey = `mendel_class_data_${cls}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      existing.push(record);
+      localStorage.setItem(storageKey, JSON.stringify(existing));
+
+      const gasUrl = localStorage.getItem('mendel_gas_url');
+      if (gasUrl) {
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            ...record, 
+            classGroup: cls,
+            className: cls,
+            studentName: name,
+            name: name,
+            student: name
+          })
+        }).catch(() => {});
+      }
+
+      statusEl.innerText = `✅ [${cls}] ${name}님의 데이터 (${total}회) 전송 완료!`;
+      statusEl.className = 'text-center text-xs font-bold text-emerald-600 min-h-[18px]';
+
+      setTimeout(() => {
+        statusEl.innerText = '';
+      }, 3500);
+
+      if (classState.selectedClass === cls) {
+        fetchClassData();
+      }
+    }
+
+    function fetchClassData() {
+      const cls = document.getElementById('classSelect').value;
+      classState.selectedClass = cls;
+      const storageKey = `mendel_class_data_${cls}`;
+      const records = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      classState.records = records;
+      updateClassUI();
+    }
+
+    function setClassViewMode(mode) {
+      classState.viewMode = mode;
+      const phenoBtn = document.getElementById('classViewPhenoBtn');
+      const genoBtn = document.getElementById('classViewGenoBtn');
+      if (mode === 'phenotype') {
+        phenoBtn.className = 'flex-1 py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition-all font-bold';
+        genoBtn.className = 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+      } else {
+        genoBtn.className = 'flex-1 py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition-all font-bold';
+        phenoBtn.className = 'flex-1 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+      }
+      updateClassUI();
+    }
+
+    function updateIndividualChart() {
+      const ctx = document.getElementById('individualChart');
+      if (!ctx) return;
+
+      if (individualChartInstance) {
+        individualChartInstance.destroy();
+      }
+
+      if (indState.viewMode === 'phenotype') {
+        const yellow = indState.YY + indState.Yy;
+        const green = indState.yy;
+        individualChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['둥근 완두 (우성)', '주름진 완두 (열성)'],
+            datasets: [{
+              label: '추출 개수',
+              data: [yellow, green],
+              backgroundColor: ['#FACC15', '#4ADE80'],
+              borderColor: ['#CA8A04', '#16A34A'],
+              borderWidth: 2,
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      } else {
+        individualChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['YY (순종)', 'Yy (잡종)', 'yy (순종)'],
+            datasets: [{
+              label: '추출 개수',
+              data: [indState.YY, indState.Yy, indState.yy],
+              backgroundColor: ['#EAB308', '#FDE047', '#4ADE80'],
+              borderColor: ['#CA8A04', '#CA8A04', '#16A34A'],
+              borderWidth: 2,
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+    }
+
+    function updateClassChart(totalN, sumYY, sumYy, sumyy) {
+      const ctx = document.getElementById('classChart');
+      if (!ctx) return;
+
+      if (classChartInstance) {
+        classChartInstance.destroy();
+      }
+
+      if (classState.viewMode === 'phenotype') {
+        const sumYellow = sumYY + sumYy;
+        const sumGreen = sumyy;
+        const expYellowPct = totalN > 0 ? (sumYellow / totalN) * 100 : 0;
+        const expGreenPct = totalN > 0 ? (sumGreen / totalN) * 100 : 0;
+
+        classChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['둥근 완두', '주름진 완두'],
+            datasets: [
+              {
+                label: '실험 비율 (%)',
+                data: [expYellowPct, expGreenPct],
+                backgroundColor: '#6366F1',
+                borderRadius: 6
+              },
+              {
+                label: '이론 비율 (%)',
+                data: [75, 25],
+                backgroundColor: '#CBD5E1',
+                borderRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { max: 100, beginAtZero: true, title: { display: true, text: '비율 (%)' } } }
+          }
+        });
+      } else {
+        const expYYPct = totalN > 0 ? (sumYY / totalN) * 100 : 0;
+        const expYyPct = totalN > 0 ? (sumYy / totalN) * 100 : 0;
+        const expyyPct = totalN > 0 ? (sumyy / totalN) * 100 : 0;
+
+        classChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['YY', 'Yy', 'yy'],
+            datasets: [
+              {
+                label: '실험 비율 (%)',
+                data: [expYYPct, expYyPct, expyyPct],
+                backgroundColor: '#6366F1',
+                borderRadius: 6
+              },
+              {
+                label: '이론 비율 (%)',
+                data: [25, 50, 25],
+                backgroundColor: '#CBD5E1',
+                borderRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { max: 100, beginAtZero: true, title: { display: true, text: '비율 (%)' } } }
+          }
+        });
+      }
+    }
+
+    function updateClassUI() {
+      const records = classState.records;
+      let totalN = 0, sumYY = 0, sumYy = 0, sumyy = 0;
+
+      records.forEach(r => {
+        totalN += r.total;
+        sumYY += r.YY;
+        sumYy += r.Yy;
+        sumyy += r.yy;
+      });
+
+      const sumYellow = sumYY + sumYy;
+      const sumGreen = sumyy;
+
+      document.getElementById('classTotalN').innerText = totalN;
+      document.getElementById('classYellowTotal').innerText = sumYellow;
+      document.getElementById('classGreenTotal').innerText = sumGreen;
+
+      const yellowPct = totalN > 0 ? ((sumYellow / totalN) * 100).toFixed(1) : '0';
+      const greenPct = totalN > 0 ? ((sumGreen / totalN) * 100).toFixed(1) : '0';
+
+      document.getElementById('classYellowPercent').innerText = `${yellowPct}%`;
+      document.getElementById('classGreenPercent').innerText = `${greenPct}%`;
+
+      const llnBar = document.getElementById('llnBarContainer');
+      const llnTargetText = document.getElementById('llnTargetText');
+
+      if (classState.viewMode === 'phenotype') {
+        const yPctVal = totalN > 0 ? (sumYellow / totalN) * 100 : 50;
+        const gPctVal = totalN > 0 ? (sumGreen / totalN) * 100 : 50;
+
+        llnBar.innerHTML = `
+          <div class="bg-amber-400 h-full flex items-center justify-center text-[11px] sm:text-xs font-black text-amber-950 transition-all duration-500" style="width: ${yPctVal}%;">
+            둥근 ${yellowPct}%
+          </div>
+          <div class="bg-emerald-400 h-full flex items-center justify-center text-[11px] sm:text-xs font-black text-emerald-950 transition-all duration-500" style="width: ${gPctVal}%;">
+            주름 ${greenPct}%
+          </div>
+          <div class="absolute left-[75%] top-0 bottom-0 w-1 bg-rose-500 z-10 shadow-md"></div>
+        `;
+        llnTargetText.innerText = '▲ 이론적 우성 비율 (75%)';
+      } else {
+        const yyPct = totalN > 0 ? ((sumYY / totalN) * 100).toFixed(1) : '33.3';
+        const YyPct = totalN > 0 ? ((sumYy / totalN) * 100).toFixed(1) : '33.3';
+        const recPct = totalN > 0 ? ((sumyy / totalN) * 100).toFixed(1) : '33.3';
+
+        const yyVal = totalN > 0 ? (sumYY / totalN) * 100 : 33.3;
+        const YyVal = totalN > 0 ? (sumYy / totalN) * 100 : 33.3;
+        const recVal = totalN > 0 ? (sumyy / totalN) * 100 : 33.3;
+
+        llnBar.innerHTML = `
+          <div class="bg-amber-500 h-full flex items-center justify-center text-[10px] sm:text-xs font-black text-white transition-all duration-500" style="width: ${yyVal}%;">
+            YY ${yyPct}%
+          </div>
+          <div class="bg-amber-300 h-full flex items-center justify-center text-[10px] sm:text-xs font-black text-amber-950 transition-all duration-500" style="width: ${YyVal}%;">
+            Yy ${YyPct}%
+          </div>
+          <div class="bg-emerald-400 h-full flex items-center justify-center text-[10px] sm:text-xs font-black text-emerald-950 transition-all duration-500" style="width: ${recVal}%;">
+            yy ${recPct}%
+          </div>
+          <div class="absolute left-[25%] top-0 bottom-0 w-0.5 bg-rose-500 z-10 opacity-70"></div>
+          <div class="absolute left-[75%] top-0 bottom-0 w-0.5 bg-rose-500 z-10 opacity-70"></div>
+        `;
+        llnTargetText.innerText = '▲ 이론적 분리비 (25% : 50% : 25%)';
+      }
+
+      if (sumGreen > 0) {
+        const ratio = (sumYellow / sumGreen).toFixed(2);
+        document.getElementById('classRatioText').innerText = `실험 비율 ${ratio} : 1`;
+      } else {
+        document.getElementById('classRatioText').innerText = `실험 비율 ${sumYellow} : ${sumGreen}`;
+      }
+
+      const tbody = document.getElementById('classTableBody');
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-3 py-6 text-center text-slate-400 italic">아직 제출된 데이터가 없습니다.</td></tr>`;
+      } else {
+        tbody.innerHTML = records.map(r => {
+          const dom = r.YY + r.Yy;
+          const rec = r.yy;
+          const rText = rec > 0 ? `${(dom / rec).toFixed(1)}:1` : `${dom}:0`;
+          const displayName = r.studentName || r.name || r.student || '익명 학생';
+          return `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-3 py-2.5 font-bold text-slate-800">${displayName}</td>
+              <td class="px-3 py-2.5 text-center font-bold text-indigo-600">${r.total}</td>
+              <td class="px-3 py-2.5 text-center text-amber-700">${r.YY}</td>
+              <td class="px-3 py-2.5 text-center text-amber-700">${r.Yy}</td>
+              <td class="px-3 py-2.5 text-center text-emerald-700 font-bold">${r.yy}</td>
+              <td class="px-3 py-2.5 text-right font-extrabold text-slate-700">${rText}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      updateClassChart(totalN, sumYY, sumYy, sumyy);
+    }
+
+    function switchTab(tabName) {
+      const indTab = document.getElementById('individualTab');
+      const clsTab = document.getElementById('classTab');
+      const indBtn = document.getElementById('tabIndividualBtn');
+      const clsBtn = document.getElementById('tabClassBtn');
+
+      if (tabName === 'individual') {
+        indTab.classList.remove('hidden');
+        clsTab.classList.add('hidden');
+        indBtn.className = 'flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg bg-white shadow-sm text-amber-600 font-bold transition-all';
+        clsBtn.className = 'flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+      } else {
+        clsTab.classList.remove('hidden');
+        indTab.classList.add('hidden');
+        clsBtn.className = 'flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg bg-white shadow-sm text-indigo-600 font-bold transition-all';
+        indBtn.className = 'flex-1 sm:flex-none px-3.5 sm:px-5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all font-semibold';
+        fetchClassData();
+        if (classChartInstance) {
+          setTimeout(() => classChartInstance.resize(), 50);
+        }
+      }
+    }
+
+    function toggleConfirmModal(show, title = '', msg = '', callback = null) {
+      const modal = document.getElementById('confirmModal');
+      if (show) {
+        document.getElementById('confirmTitle').innerText = title;
+        document.getElementById('confirmMessage').innerText = msg;
+        onConfirmCallback = callback;
+        document.getElementById('confirmYesBtn').onclick = () => {
+          if (onConfirmCallback) onConfirmCallback();
+          toggleConfirmModal(false);
+        };
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function clearClassData() {
+      toggleConfirmModal(
+        true,
+        `${classState.selectedClass} 데이터 전체 초기화`,
+        `${classState.selectedClass}의 모든 모둠 집계 데이터를 삭제하시겠습니까?`,
+        () => {
+          const key = `mendel_class_data_${classState.selectedClass}`;
+          localStorage.removeItem(key);
+          fetchClassData();
+        }
+      );
+    }
+
+    function saveGasSettings() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      localStorage.setItem('mendel_gas_url', url);
+      const status = document.getElementById('gasModalStatus');
+      status.innerText = '✅ 구글 시트 연동 URL이 저장되었습니다.';
+      status.className = 'text-xs font-bold text-center text-emerald-600 min-h-[16px]';
+      setTimeout(() => toggleSettingsModal(false), 1200);
+    }
+
+    function clearGasSettings() {
+      localStorage.removeItem('mendel_gas_url');
+      document.getElementById('gasUrlInput').value = '';
+      const status = document.getElementById('gasModalStatus');
+      status.innerText = '⚠️ 구글 시트 연동이 해제되었습니다.';
+      status.className = 'text-xs font-bold text-center text-rose-500 min-h-[16px]';
+      setTimeout(() => toggleSettingsModal(false), 1200);
+    }
+
+    window.onload = function() {
+      loadStudentInfo();
+      updateIndividualUI();
+      fetchClassData();
+    };
+  </script>
+</body>
+</html>
